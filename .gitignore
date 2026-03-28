@@ -1,0 +1,9 @@
+# Compiled binaries (rebuild from source)
+package/wireguard-go
+package/wg
+package.tgz
+*.spk
+
+# OS files
+.DS_Store
+Thumbs.db

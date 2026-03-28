@@ -1,0 +1,194 @@
+#!/bin/bash
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# WireGuard VPN Tunnel Setup Helper
+# Usage: wg-tunnel-setup [configure|status|test|reset]
+#
+# This script helps configure and manage the WireGuard VPN tunnel
+# for routing public-facing services through the OVPN.com static IP.
+
+CONF_DIR="/etc/wireguard"
+CONF_FILE="${CONF_DIR}/wg0.conf"
+LOG_FILE="/var/log/wireguard-vpn.log"
+INTERFACE="wg0"
+INSTALL_DIR="/var/packages/WireGuardVPN/target"
+
+export WG_QUICK_USERSPACE_IMPLEMENTATION="${INSTALL_DIR}/wireguard-go"
+export PATH="${INSTALL_DIR}:${PATH}"
+
+log() {
+    echo "$(date '+%Y-%m-%d %H:%M:%S') [wg-tunnel-setup] $1" | tee -a "${LOG_FILE}"
+}
+
+show_status() {
+    echo "========================================="
+    echo "  WireGuard VPN Tunnel Status"
+    echo "========================================="
+    echo ""
+
+    # Check if interface exists
+    if ip link show "${INTERFACE}" >/dev/null 2>&1; then
+        echo "[OK] Interface ${INTERFACE} is UP"
+        echo ""
+        wg show "${INTERFACE}" 2>/dev/null
+        echo ""
+        
+        # Show public IP
+        echo "--- Public IP Check ---"
+        PUBLIC_IP=$(curl -s --max-time 10 https://ifconfig.me 2>/dev/null)
+        if [ -n "$PUBLIC_IP" ]; then
+            echo "Current public IP: ${PUBLIC_IP}"
+        else
+            echo "Could not determine public IP"
+        fi
+    else
+        echo "[DOWN] Interface ${INTERFACE} is not active"
+        echo ""
+        echo "Start the package from Package Center or run:"
+        echo "  wg-quick up ${INTERFACE}"
+    fi
+    
+    echo ""
+    echo "--- Routing Table ---"
+    ip route show | head -10
+    echo ""
+    echo "--- Log (last 20 lines) ---"
+    tail -20 "${LOG_FILE}" 2>/dev/null || echo "No log file found"
+}
+
+configure_tunnel() {
+    echo "========================================="
+    echo "  WireGuard VPN Tunnel Configuration"
+    echo "========================================="
+    echo ""
+    
+    if [ -f "${CONF_FILE}" ] && ! grep -q "YOUR_PRIVATE_KEY_HERE" "${CONF_FILE}" 2>/dev/null; then
+        echo "Existing configuration found at ${CONF_FILE}"
+        echo ""
+        cat "${CONF_FILE}" | grep -v "PrivateKey"
+        echo "PrivateKey = [REDACTED]"
+        echo ""
+        read -p "Overwrite existing config? (y/N): " OVERWRITE
+        if [ "$OVERWRITE" != "y" ] && [ "$OVERWRITE" != "Y" ]; then
+            echo "Keeping existing configuration."
+            return 0
+        fi
+    fi
+
+    echo "Enter your WireGuard configuration from OVPN.com:"
+    echo ""
+    read -p "Private Key: " PRIVATE_KEY
+    read -p "VPN Address (e.g., x.x.x.x/32): " VPN_ADDRESS
+    read -p "Peer Public Key: " PEER_PUBLIC_KEY
+    read -p "Endpoint (e.g., vpn-server-ip:port): " ENDPOINT
+    read -p "DNS Servers (comma-separated, press Enter for OVPN defaults): " DNS_SERVERS
+
+    if [ -z "$DNS_SERVERS" ]; then
+        DNS_SERVERS="1.1.1.1,8.8.8.8"
+    fi
+
+    # Detect default gateway for LAN exclusion
+    DEFAULT_GW=$(ip route | grep default | awk '{print $3}' | head -1)
+    LAN_SUBNET=$(ip route | grep -v default | grep "dev eth0" | grep "proto kernel" | awk '{print $1}' | head -1)
+
+    cat > "${CONF_FILE}" << EOF
+[Interface]
+PrivateKey = ${PRIVATE_KEY}
+Address = ${VPN_ADDRESS}
+DNS = ${DNS_SERVERS}
+
+# Route all traffic through the tunnel
+# LAN access is preserved automatically by wg-quick
+# To route only specific traffic, change AllowedIPs below
+
+[Peer]
+PublicKey = ${PEER_PUBLIC_KEY}
+AllowedIPs = 0.0.0.0/0
+Endpoint = ${ENDPOINT}
+PersistentKeepalive = 25
+EOF
+
+    chmod 600 "${CONF_FILE}"
+    log "Configuration written to ${CONF_FILE}"
+    echo ""
+    echo "Configuration saved. Start the tunnel with:"
+    echo "  /usr/syno/bin/synopkg start WireGuardVPN"
+    echo ""
+    echo "Or from Package Center, click 'Run'."
+}
+
+test_tunnel() {
+    echo "Testing WireGuard tunnel..."
+    echo ""
+    
+    if ! ip link show "${INTERFACE}" >/dev/null 2>&1; then
+        echo "[ERROR] Tunnel interface ${INTERFACE} is not up"
+        echo "Start the package first."
+        return 1
+    fi
+    
+    echo "[1/4] Checking interface..."
+    ip addr show "${INTERFACE}" 2>/dev/null
+    echo ""
+    
+    echo "[2/4] Checking WireGuard status..."
+    wg show "${INTERFACE}" 2>/dev/null
+    echo ""
+    
+    echo "[3/4] Checking public IP..."
+    PUBLIC_IP=$(curl -s --max-time 15 https://ifconfig.me 2>/dev/null)
+    echo "Public IP: ${PUBLIC_IP:-FAILED}"
+    echo ""
+    
+    echo "[4/4] Checking DNS resolution..."
+    nslookup google.com >/dev/null 2>&1 && echo "DNS: OK" || echo "DNS: FAILED"
+    echo ""
+    
+    echo "Test complete."
+}
+
+reset_tunnel() {
+    echo "Resetting WireGuard tunnel..."
+    
+    # Bring down the interface
+    wg-quick down "${INTERFACE}" 2>/dev/null
+    ip link set "${INTERFACE}" down 2>/dev/null
+    ip link delete "${INTERFACE}" 2>/dev/null
+    
+    # Kill wireguard-go processes
+    pkill -f "wireguard-go" 2>/dev/null
+    
+    # Clean up state
+    rm -f /var/run/wireguard/${INTERFACE}.state 2>/dev/null
+    
+    log "Tunnel reset complete"
+    echo "Tunnel has been reset. Reconfigure or restart from Package Center."
+}
+
+case "${1:-status}" in
+    configure|setup)
+        configure_tunnel
+        ;;
+    status|show)
+        show_status
+        ;;
+    test|check)
+        test_tunnel
+        ;;
+    reset|clean)
+        reset_tunnel
+        ;;
+    *)
+        echo "Usage: wg-tunnel-setup {configure|status|test|reset}"
+        echo ""
+        echo "  configure  - Interactive WireGuard config setup"
+        echo "  status     - Show current tunnel status"
+        echo "  test       - Test tunnel connectivity"
+        echo "  reset      - Stop and clean up tunnel"
+        exit 1
+        ;;
+esac

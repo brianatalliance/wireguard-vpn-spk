@@ -1,0 +1,23 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Post-upgrade script — re-link and restart
+
+INSTALL_DIR="/var/packages/WireGuardVPN/target"
+BIN_DIR="/usr/local/bin"
+
+# Re-set permissions
+chmod 755 "${INSTALL_DIR}/wireguard-go"
+chmod 755 "${INSTALL_DIR}/wg"
+chmod 755 "${INSTALL_DIR}/wg-quick"
+
+# Re-create symlinks
+ln -sf "${INSTALL_DIR}/wireguard-go" "${BIN_DIR}/wireguard-go"
+ln -sf "${INSTALL_DIR}/wg" "${BIN_DIR}/wg"
+ln -sf "${INSTALL_DIR}/wg-quick" "${BIN_DIR}/wg-quick"
+
+exit 0

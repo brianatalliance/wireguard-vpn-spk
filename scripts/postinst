@@ -1,0 +1,68 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Post-installation script for WireGuard VPN Tunnel
+
+INSTALL_DIR="/var/packages/WireGuardVPN/target"
+CONF_DIR="/etc/wireguard"
+BIN_DIR="/usr/local/bin"
+
+# Set executable permissions
+chmod 755 "${INSTALL_DIR}/wireguard-go"
+chmod 755 "${INSTALL_DIR}/wg"
+chmod 755 "${INSTALL_DIR}/wg-quick"
+
+# Create symlinks in /usr/local/bin for PATH access
+ln -sf "${INSTALL_DIR}/wireguard-go" "${BIN_DIR}/wireguard-go"
+ln -sf "${INSTALL_DIR}/wg" "${BIN_DIR}/wg"
+ln -sf "${INSTALL_DIR}/wg-quick" "${BIN_DIR}/wg-quick"
+
+# Create WireGuard config directory
+mkdir -p "${CONF_DIR}"
+chmod 700 "${CONF_DIR}"
+
+# Create default wg0.conf if it doesn't exist
+if [ ! -f "${CONF_DIR}/wg0.conf" ]; then
+    cat > "${CONF_DIR}/wg0.conf" << 'WGEOF'
+# WireGuard VPN Tunnel Configuration
+# Edit this file with your OVPN.com WireGuard credentials
+#
+# To apply changes:
+#   wg-quick down wg0 && wg-quick up wg0
+# Or restart the package from Package Center
+#
+[Interface]
+PrivateKey = YOUR_PRIVATE_KEY_HERE
+Address = YOUR_VPN_IP/32
+DNS = 1.1.1.1,8.8.8.8
+# Set Table = off to prevent wg-quick from adding a default route
+# This gives you manual control over routing
+# Table = off
+
+[Peer]
+PublicKey = YOUR_PEER_PUBLIC_KEY_HERE
+AllowedIPs = 0.0.0.0/0
+Endpoint = YOUR_ENDPOINT_HERE:PORT
+PersistentKeepalive = 25
+WGEOF
+    chmod 600 "${CONF_DIR}/wg0.conf"
+fi
+
+# Ensure TUN device exists
+if [ ! -c /dev/net/tun ]; then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 666 /dev/net/tun
+fi
+
+# Enable IP forwarding
+echo 1 > /proc/sys/net/ipv4/ip_forward 2>/dev/null
+
+echo "WireGuard VPN Tunnel installed successfully."
+echo "Edit /etc/wireguard/wg0.conf with your VPN credentials, then start the package."
+
+exit 0

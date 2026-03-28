@@ -1,0 +1,18 @@
+WireGuard VPN Tunnel for Synology DS220+
+=========================================
+Author:  Brian Vicente
+Org:     Alliance for Empowerment
+Version: 1.0.0
+Date:    2026-03-28
+Arch:    x86_64 (Geminilake)
+Target:  DSM 7.0+
+
+Changelog:
+----------
+v1.0.0 (2026-03-28) — Brian Vicente
+  - Initial release
+  - Userspace WireGuard via wireguard-go (statically compiled)
+  - Bundled wg and wg-quick from wireguard-tools
+  - wg-tunnel-setup helper script for config/status/testing
+  - DSM 7 compatible (run-as: package, start via sudo)
+  - Configured for OVPN.com static IP tunnel routing

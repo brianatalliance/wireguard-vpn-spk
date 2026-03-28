@@ -1,0 +1,29 @@
+WireGuard VPN Tunnel for Synology DSM
+======================================
+Author:  Brian Vicente
+Version: 1.0.0
+Date:    2026-03-28
+
+This package bundles the following open-source components:
+
+1. wireguard-go - Go implementation of WireGuard
+   License: MIT
+   Copyright (C) 2017-2023 WireGuard LLC. All Rights Reserved.
+   Source: https://git.zx2c4.com/wireguard-go
+
+2. wireguard-tools (wg, wg-quick)
+   License: GPLv2
+   Copyright (C) 2015-2023 Jason A. Donenfeld. All Rights Reserved.
+   Source: https://git.zx2c4.com/wireguard-tools
+
+WireGuard is a registered trademark of Jason A. Donenfeld.
+
+This SPK package is provided as-is for personal/organizational use.
+Use at your own risk. No warranty is provided.
+
+Permission is hereby granted, free of charge, to any person obtaining
+a copy of this software and associated documentation files, to deal
+in the Software without restriction, including without limitation the
+rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, subject to the licenses of the
+bundled components above.

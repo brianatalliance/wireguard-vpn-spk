@@ -1,0 +1,21 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Pre-upgrade script — stop WireGuard tunnel before upgrade
+
+INSTALL_DIR="/var/packages/WireGuardVPN/target"
+
+# Stop any running WireGuard interfaces
+if [ -x "${INSTALL_DIR}/wg" ]; then
+    export WG_QUICK_USERSPACE_IMPLEMENTATION="${INSTALL_DIR}/wireguard-go"
+    export PATH="${INSTALL_DIR}:${PATH}"
+    for iface in $("${INSTALL_DIR}/wg" show interfaces 2>/dev/null); do
+        "${INSTALL_DIR}/wg-quick" down "$iface" 2>/dev/null
+    done
+fi
+
+exit 0

@@ -1,0 +1,17 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Pre-installation script for WireGuard VPN Tunnel
+
+# Ensure TUN device exists
+if [ ! -c /dev/net/tun ]; then
+    mkdir -p /dev/net
+    mknod /dev/net/tun c 10 200
+    chmod 666 /dev/net/tun
+fi
+
+exit 0

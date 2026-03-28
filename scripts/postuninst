@@ -1,0 +1,28 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Post-uninstall script for WireGuard VPN Tunnel
+
+BIN_DIR="/usr/local/bin"
+
+# Remove symlinks
+rm -f "${BIN_DIR}/wireguard-go"
+rm -f "${BIN_DIR}/wg"
+rm -f "${BIN_DIR}/wg-quick"
+
+# Stop any running WireGuard interfaces
+if command -v wg >/dev/null 2>&1; then
+    for iface in $(wg show interfaces 2>/dev/null); do
+        ip link set "$iface" down 2>/dev/null
+        ip link delete "$iface" 2>/dev/null
+    done
+fi
+
+# Note: We do NOT remove /etc/wireguard on uninstall to preserve user configs
+echo "WireGuard VPN Tunnel uninstalled. Config files preserved in /etc/wireguard/"
+
+exit 0

@@ -1,0 +1,27 @@
+#!/bin/sh
+# WireGuard VPN Tunnel for Synology DS220+
+# Author:  Brian Vicente
+# Version: 1.0.0
+# Date:    2026-03-28
+# Org:     Alliance for Empowerment
+#
+# Pre-uninstall script — stop tunnel before removing
+
+INSTALL_DIR="/var/packages/WireGuardVPN/target"
+
+export WG_QUICK_USERSPACE_IMPLEMENTATION="${INSTALL_DIR}/wireguard-go"
+export PATH="${INSTALL_DIR}:${PATH}"
+
+# Stop all WireGuard interfaces
+if [ -x "${INSTALL_DIR}/wg" ]; then
+    for iface in $("${INSTALL_DIR}/wg" show interfaces 2>/dev/null); do
+        "${INSTALL_DIR}/wg-quick" down "$iface" 2>/dev/null || true
+        ip link set "$iface" down 2>/dev/null || true
+        ip link delete "$iface" 2>/dev/null || true
+    done
+fi
+
+# Kill any wireguard-go processes
+pkill -f "wireguard-go" 2>/dev/null || true
+
+exit 0
