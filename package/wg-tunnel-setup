@@ -3,7 +3,7 @@
 # Author:  Brian Vicente
 # Version: 1.0.0
 # Date:    2026-03-28
-# Org:     Alliance for Empowerment
+# Org:     brianatalliance
 #
 # WireGuard VPN Tunnel Setup Helper
 # Usage: wg-tunnel-setup [configure|status|test|reset]
