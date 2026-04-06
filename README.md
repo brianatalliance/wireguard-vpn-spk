@@ -3,7 +3,6 @@
 **Author:** Brian Vicente
 **Version:** 1.0.0
 **Date:** 2026-03-28
-**Org:** Alliance for Empowerment
 
 Synology SPK package that provides a userspace WireGuard VPN tunnel for DSM 7.0+ without requiring kernel module support. Uses `wireguard-go` (Go implementation) with `wg` and `wg-quick` from `wireguard-tools`.
 
@@ -153,9 +152,18 @@ wireguard-spk/
 - [udm-nspawn-pki](https://github.com/brianatalliance/udm-nspawn-pki) — Two-tier PKI in systemd-nspawn on UniFi Dream Machine Pro
 - [nas-git-sync](https://github.com/brianatalliance/nas-git-sync) — Automated GitHub to Synology NAS repo sync script
 
+## Acknowledgments
+
+- [WireGuard](https://www.wireguard.com/) — Fast, modern, secure VPN tunnel protocol
+- [wireguard-go](https://git.zx2c4.com/wireguard-go/about/) — Userspace Go implementation of WireGuard
+- [Synology DSM](https://www.synology.com/en-global/dsm) — NAS operating system this package targets
+- Bash — Shell scripting runtime powering all package lifecycle scripts
+
 ## Author
 
-**Brian Vicente** — Network Coordinator & Cybersecurity Admin, [Alliance for Empowerment](https://www.allianceforempowerment.org)
+**Brian Vicente** — Network Coordinator & Cybersecurity Admin
+
+Built with [Perplexity Computer](https://computer.perplexity.ai)
 
 GitHub: [@brianatalliance](https://github.com/brianatalliance)
 
